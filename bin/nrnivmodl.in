@@ -51,6 +51,13 @@ if [ ! -d $MODSUBDIR ] ; then
 	mkdir $MODSUBDIR
 fi
 
+NMODL_C_Ext="c"
+if [ "$1" = "-cpp" ] ; then
+       NMODL_C_Ext="cpp"
+       shift
+       shift
+fi
+
 pwd
 
 files=""
@@ -120,37 +127,37 @@ echo '#include <stdio.h>
 #include "hocdec.h"
 extern int nrnmpi_myid;
 extern int nrn_nobanner_;
-' > mod_func.c
+' > mod_func.${NMODL_C_Ext}
 for i in $bfiles ; do
 	echo 'extern void _'$i'_reg(void);'
-done >> mod_func.c
+done >> mod_func.${NMODL_C_Ext}
 echo '
 void modl_reg(){
   if (!nrn_nobanner_) if (nrnmpi_myid < 1) {
     fprintf(stderr, "Additional mechanisms from files'$newline'");
-' >> mod_func.c
+' >> mod_func.${NMODL_C_Ext}
 
 for i in $files
 do
 	echo '    fprintf(stderr," '$i'.mod");'
-done >>mod_func.c
+done >>mod_func.${NMODL_C_Ext}
 
 echo '    fprintf(stderr, "'$newline'");
-  }' >>mod_func.c
+  }' >>mod_func.${NMODL_C_Ext}
 
 for i in $bfiles; do
 	echo '  _'$i'_reg();'
 	MODOBJS="$MODOBJS $i.o"
-done >> mod_func.c
+done >> mod_func.${NMODL_C_Ext}
 
-echo "}" >> mod_func.c
+echo "}" >> mod_func.${NMODL_C_Ext}
 
 
 if test -n "$cfiles" ; then
-	COBJS=`echo "$cfiles" | sed 's/\.c/.o/g'`
+	COBJS=`echo "$cfiles" | sed "s/\.${NMODL_C_Ext}/.o/g"`
 fi
 
-@NRNMECH_DLL_STYLE_FALSE@make -j 4 -f "${MAKEFILEDIR}/nrniv_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" special &&
+@NRNMECH_DLL_STYLE_FALSE@make -j 4 -f "${MAKEFILEDIR}/nrniv_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "NMODL_C_Ext=$NMODL_C_Ext" special &&
 @NRNMECH_DLL_STYLE_FALSE@  echo "Successfully created $MODSUBDIR/special"
 
 @NRNMECH_DLL_STYLE_TRUE@MODLO=`echo "$MODOBJS" | sed 's/\.o/.lo/g'`
@@ -158,8 +165,8 @@ fi
 @NRNMECH_DLL_STYLE_TRUE@if test "${mdir}" = "${prefix}/share/nrn/demo/release/powerpc" ; then
 @NRNMECH_DLL_STYLE_TRUE@  mdir='${NRNHOME}'/share/nrn/demo/release/${MODSUBDIR}
 @NRNMECH_DLL_STYLE_TRUE@fi
-@NRNMECH_DLL_STYLE_TRUE@@USING_CMAKE_FALSE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la
-@NRNMECH_DLL_STYLE_TRUE@@USING_CMAKE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" libnrnmech.la VERBOSE=1
+@NRNMECH_DLL_STYLE_TRUE@@USING_CMAKE_FALSE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODLO" "COBJFILES=$CLO" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "NMODL_C_Ext=$NMODL_C_Ext" libnrnmech.la
+@NRNMECH_DLL_STYLE_TRUE@@USING_CMAKE_TRUE@make -j 4 -f "$MAKEFILEDIR/nrnmech_makefile" "ROOT=${prefix}" "MODOBJFILES=$MODOBJS" "COBJFILES=$COBJS" "UserLDFLAGS=$UserLDFLAGS" "UserINCFLAGS=$UserINCFLAGS" "NMODL_C_Ext=$NMODL_C_Ext" libnrnmech.la VERBOSE=1
 @NRNMECH_DLL_STYLE_TRUE@  echo '#!/bin/sh
 @NRNMECH_DLL_STYLE_TRUE@if test "x${NRNHOME}" = "x" ; then
 @NRNMECH_DLL_STYLE_TRUE@	NRNHOME='"\"${prefix}\""'
